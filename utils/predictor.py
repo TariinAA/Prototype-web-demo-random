@@ -17,8 +17,8 @@ IMG_SIZE = 224
 # 0 = Saliva
 # 1 = Sweat
 CLASS_NAMES = [
-    "Saliva",  # index 0
-    "Sweat"    # index 1
+    "Saliva",
+    "Sweat",
 ]
 
 
@@ -26,20 +26,18 @@ def preprocess_image(pil_image: Image.Image) -> np.ndarray:
     """
     Convert a PIL image into shape (1, 224, 224, 3).
 
-    IMPORTANT:
-    The original EfficientNetB0 model already contains internal
-    Rescaling / Normalization layers, so we keep pixel values
-    in the raw 0-255 range as float32.
+    The original EfficientNetB0 model contains internal preprocessing,
+    so pixel values are kept in the 0-255 range as float32.
     """
 
     # Ensure RGB
     image = pil_image.convert("RGB")
 
-    # Resize
+    # Resize to model input size
     image = image.resize((IMG_SIZE, IMG_SIZE))
 
-    # Keep raw 0-255 values
-    array = np.asarray(image).astype(np.float32)
+    # Convert to numpy array
+    array = np.asarray(image, dtype=np.float32)
 
     # Add batch dimension
     batch = np.expand_dims(array, axis=0)
@@ -49,7 +47,7 @@ def preprocess_image(pil_image: Image.Image) -> np.ndarray:
 
 def predict_stain(interpreter, pil_image: Image.Image) -> dict:
     """
-    Run inference using a TensorFlow Lite Interpreter.
+    Run inference using TensorFlow Lite.
 
     Returns:
         {
@@ -64,46 +62,41 @@ def predict_stain(interpreter, pil_image: Image.Image) -> dict:
 
     batch = preprocess_image(pil_image)
 
-    # Get TFLite tensor information
+    # Get model input/output information
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
 
-    # Match dtype expected by the TFLite model
+    # Match model input dtype
     input_dtype = input_details[0]["dtype"]
     batch = batch.astype(input_dtype)
 
-    # Put image into model input tensor
+    # Set input tensor
     interpreter.set_tensor(
         input_details[0]["index"],
-        batch
+        batch,
     )
 
-    # Run inference
+    # Run model
     interpreter.invoke()
 
-    # Read output
+    # Get predictions
     raw_predictions = interpreter.get_tensor(
         output_details[0]["index"]
     )[0]
 
+    # Find class with highest probability
     predicted_index = int(np.argmax(raw_predictions))
     predicted_class = CLASS_NAMES[predicted_index]
 
     confidence = float(raw_predictions[predicted_index]) * 100.0
 
     probabilities = {
-        CLASS_NAMES[i]: round(
-            float(raw_predictions[i]) * 100.0,
-            1
-        )
+        CLASS_NAMES[i]: round(float(raw_predictions[i]) * 100.0, 1)
         for i in range(len(CLASS_NAMES))
     }
 
     return {
         "class": predicted_class,
-        "confidence": round(confidence, 1),
-        "probabilities": probabilities
-    }
         "confidence": round(confidence, 1),
         "probabilities": probabilities,
     }
