@@ -1,6 +1,5 @@
 streamlit
-tensorflow==2.21.0
-keras
+tflite-runtime
 pillow
 numpy
 pandas
