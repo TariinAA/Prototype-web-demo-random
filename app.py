@@ -263,6 +263,131 @@ def render_analyzing():
     go_to("results")
     st.rerun()
 
+# ---------------------------------------------------------------------------
+# PAGE: RANDOM SAMPLE DEMO
+# ---------------------------------------------------------------------------
+def render_random_sample():
+
+    st.markdown(
+        """
+        <div class="section-step">
+            <div class="section-num">04</div>
+            <div class="section-title">RANDOM SAMPLE DEMO</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.write(
+        "สุ่มภาพตัวอย่าง 8 ภาพจากชุดข้อมูล หรือเลือกภาพของคุณเอง"
+    )
+
+    option = st.radio(
+        "Choose source:",
+        [
+            "Random from Dataset",
+            "Upload Your Own Images"
+        ]
+    )
+
+    images = []
+
+
+    # -----------------------------
+    # สุ่มจาก Dataset
+    # -----------------------------
+    if option == "Random from Dataset":
+
+        dataset_path = "sample_dataset"
+
+        classes = ["Saliva", "Sweat"]
+
+        selected_class = random.choice(classes)
+
+        folder = os.path.join(
+            dataset_path,
+            selected_class
+        )
+
+        if os.path.exists(folder):
+
+            files = os.listdir(folder)
+
+            selected = random.sample(
+                files,
+                min(8, len(files))
+            )
+
+            st.success(
+                f"Random Class: {selected_class}"
+            )
+
+            for f in selected:
+                images.append(
+                    {
+                        "name": f,
+                        "path": os.path.join(folder, f)
+                    }
+                )
+
+        else:
+            st.warning(
+                "ยังไม่มีโฟลเดอร์ sample_dataset"
+            )
+
+
+    # -----------------------------
+    # Upload เอง
+    # -----------------------------
+    else:
+
+        uploaded_files = st.file_uploader(
+            "Upload images",
+            type=["jpg", "jpeg", "png"],
+            accept_multiple_files=True
+        )
+
+
+        if uploaded_files:
+
+            selected = random.sample(
+                uploaded_files,
+                min(8, len(uploaded_files))
+            )
+
+            for f in selected:
+                images.append(
+                    {
+                        "name": f.name,
+                        "file": f
+                    }
+                )
+
+
+    # -----------------------------
+    # แสดงผล
+    # -----------------------------
+    if images:
+
+        st.divider()
+
+        cols = st.columns(4)
+
+        for i, img in enumerate(images):
+
+            with cols[i % 4]:
+
+                if "path" in img:
+                    st.image(
+                        img["path"],
+                        caption=img["name"]
+                    )
+
+                else:
+                    st.image(
+                        img["file"],
+                        caption=img["name"]
+                    )
 
 # ---------------------------------------------------------------------------
 # PAGE: RESULTS / CASE FINDINGS
@@ -417,6 +542,7 @@ PAGES = {
     "analyzing": render_analyzing,
     "results": render_results,
     "closed": render_closed,
+    "random": render_random_sample,
 }
 
 PAGES[st.session_state.page]()
