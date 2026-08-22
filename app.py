@@ -263,9 +263,12 @@ def render_analyzing():
     go_to("results")
     st.rerun()
 
-# ---------------------------------------------------------------------------
+# —————————————————————————
+
 # PAGE: RANDOM SAMPLE DEMO
-# ---------------------------------------------------------------------------
+
+# —————————————————————————
+
 def render_random_sample():
 
     st.markdown(
@@ -278,9 +281,7 @@ def render_random_sample():
         unsafe_allow_html=True,
     )
 
-    st.write(
-        "สุ่มภาพตัวอย่าง 8 ภาพจากชุดข้อมูล หรือเลือกภาพของคุณเอง"
-    )
+    st.write("สุ่มภาพตัวอย่าง 8 ภาพจากชุดข้อมูล หรือเลือกภาพของคุณเอง")
 
     option = st.radio(
         "Choose source:",
@@ -292,81 +293,57 @@ def render_random_sample():
 
     images = []
 
-
-    # -----------------------------
-    # สุ่มจาก Dataset
-    # -----------------------------
     if option == "Random from Dataset":
 
         dataset_path = "sample_dataset"
-
         classes = ["saliva", "sweat"]
 
         selected_class = random.choice(classes)
-
-        folder = os.path.join(
-            dataset_path,
-            selected_class
-        )
+        folder = os.path.join(dataset_path, selected_class)
 
         if os.path.exists(folder):
 
-            files = os.listdir(folder)
+            files = [
+                f for f in os.listdir(folder)
+                if f.lower().endswith((".png", ".jpg", ".jpeg", ".webp"))
+            ]
 
-            selected = random.sample(
-                files,
-                min(8, len(files))
-            )
+            selected = random.sample(files, min(8, len(files)))
 
-            st.success(
-                f"Random Class: {selected_class.capitalize()}"
-            )
+            st.success(f"Random Class: {selected_class.capitalize()}")
 
             for f in selected:
-                images.append(
-                    {
-                        "name": f,
-                        "path": os.path.join(folder, f)
-                    }
-                )
+                file_path = os.path.join(folder, f)
+
+                with open(file_path, "rb") as img:
+                    img_bytes = img.read()
+
+                images.append({
+                    "name": f,
+                    "bytes": img_bytes
+                })
 
         else:
-            st.warning(
-                "ยังไม่มีโฟลเดอร์ sample_dataset"
-            )
+            st.warning("ยังไม่มีโฟลเดอร์ sample_dataset")
 
-
-    # -----------------------------
-    # Upload เอง
-    # -----------------------------
     else:
 
         uploaded_files = st.file_uploader(
             "Upload images",
-            type=["jpg", "jpeg", "png"],
+            type=["jpg", "jpeg", "png", "webp"],
             accept_multiple_files=True
         )
 
-
         if uploaded_files:
 
-            selected = random.sample(
-                uploaded_files,
-                min(8, len(uploaded_files))
-            )
+            selected = random.sample(uploaded_files, min(8, len(uploaded_files)))
 
             for f in selected:
-                images.append(
-                    {
-                        "name": f.name,
-                        "file": f
-                    }
-                )
+                images.append({
+                    "name": f.name,
+                    "bytes": f.getvalue()
+                })
 
-
-    # -----------------------------
-    # แสดงผล
-    # -----------------------------
     if images:
 
         st.divider()
@@ -376,18 +353,18 @@ def render_random_sample():
         for i, img in enumerate(images):
 
             with cols[i % 4]:
+                st.image(
+                    img["bytes"],
+                    caption=img["name"]
+                )
 
-                if "path" in img:
-                    st.image(
-                        img["path"],
-                        caption=img["name"]
-                    )
+        st.write("")
 
-                else:
-                    st.image(
-                        img["file"],
-                        caption=img["name"]
-                    )
+        if st.button("🔍 ANALYZE RANDOM SAMPLE →", use_container_width=True):
+
+            st.session_state.evidence = images
+            go_to("analyzing")
+            st.rerun()
 
 # ---------------------------------------------------------------------------
 # PAGE: RESULTS / CASE FINDINGS
