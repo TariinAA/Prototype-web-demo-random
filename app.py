@@ -57,6 +57,7 @@ def init_state():
         "evidence": [],   # list of dicts: {"name": str, "bytes": bytes}
         "results": [],    # list of dicts returned by predict_stain + name
         "notes": "",
+        "source": "",
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -103,6 +104,7 @@ def render_cover():
             st.rerun()
 
         if st.button("🎲 RANDOM SAMPLE DEMO", use_container_width=True):
+            st.session_state.source = "random"
             go_to("random")
             st.rerun()
 
@@ -204,6 +206,7 @@ def render_upload():
             st.rerun()
     with c3:
         if st.button("🔍 ANALYZE →", use_container_width=True, disabled=(len(evidence) == 0)):
+            st.session_state.source = "upload"
             go_to("analyzing")
             st.rerun()
 
@@ -457,7 +460,12 @@ def render_results():
     c1, c2, c3 = st.columns([1, 1.4, 1])
     with c1:
         if st.button("← Back to Evidence", use_container_width=True):
-            go_to("upload")
+
+            if st.session_state.source == "random":
+                go_to("random")
+            else:
+                go_to("upload")
+
             st.rerun()
     with c3:
         if st.button("📕 CLOSE CASE", use_container_width=True):
