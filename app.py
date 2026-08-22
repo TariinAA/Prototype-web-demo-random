@@ -319,7 +319,7 @@ def render_random_sample():
             )
 
             st.success(
-                f"Random Class: {selected_class}"
+                f"Random Class: {selected_class.capitalize()}"
             )
 
             for f in selected:
