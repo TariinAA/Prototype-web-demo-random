@@ -300,7 +300,7 @@ def render_random_sample():
 
         dataset_path = "sample_dataset"
 
-        classes = ["Saliva", "Sweat"]
+        classes = ["saliva", "sweat"]
 
         selected_class = random.choice(classes)
 
